@@ -1353,7 +1353,7 @@ function renderSavedOrdersScreen() {
 
     if (btnEnviar) {
         btnEnviar.addEventListener("click", () => {
-            alert("Próxima etapa: conectar este envio ao Firebase.");
+            enviarPedidosParaFirestore(pedidos);
         });
     }
 
