@@ -754,8 +754,8 @@ async function renderChefPanel() {
     });
 }
 
-function exportarCSV() {
-    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+async function exportarCSV() {
+    const pedidos = await buscarPedidosFirestore();
 
     if (pedidos.length === 0) {
         alert("Não há pedidos para exportar.");
@@ -766,6 +766,7 @@ function exportarCSV() {
         "Data",
         "Tipo",
         "Nome",
+        "Família",
         "1º Burgão",
         "Batata",
         "2º Burgão",
@@ -776,22 +777,46 @@ function exportarCSV() {
         "Trocas"
     ];
 
-    const linhas = pedidos.map((pedido) => [
-        pedido.data,
-        pedido.tipo,
-        pedido.nome,
-        pedido.primeiroBurger,
-        pedido.batata,
-        pedido.segundoBurger,
-        pedido.pedidoEspecial,
-        pedido.pagamentoNivel,
-        pedido.pagamentoNome,
-        pedido.pagamentoTexto,
-        pedido.trocasPagamento
-    ]);
+    const linhas = [];
+
+    pedidos.forEach((pedido) => {
+        if (pedido.tipo === "familia") {
+            pedido.participantes.forEach((p) => {
+                linhas.push([
+                    pedido.data,
+                    pedido.tipo,
+                    p.nome,
+                    pedido.familiaNome,
+                    p.primeiroBurger,
+                    pedido.batata,
+                    p.segundoBurger,
+                    p.pedidoEspecial,
+                    p.pagamentoNivel,
+                    p.pagamentoNome,
+                    p.pagamentoTexto,
+                    p.trocasPagamento
+                ]);
+            });
+        } else {
+            linhas.push([
+                pedido.data,
+                pedido.tipo,
+                pedido.nome,
+                "",
+                pedido.primeiroBurger,
+                pedido.batata,
+                pedido.segundoBurger,
+                pedido.pedidoEspecial,
+                pedido.pagamentoNivel,
+                pedido.pagamentoNome,
+                pedido.pagamentoTexto,
+                pedido.trocasPagamento
+            ]);
+        }
+    });
 
     const csv = [cabecalho, ...linhas]
-        .map((linha) => linha.map((campo) => `"${String(campo).replaceAll('"', '""')}"`).join(";"))
+        .map((linha) => linha.map((campo) => `"${String(campo ?? "").replaceAll('"', '""')}"`).join(";"))
         .join("\n");
 
     const blob = new Blob(["\uFEFF" + csv], {
