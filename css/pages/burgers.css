@@ -1,0 +1,232 @@
+.burger-screen {
+    min-height: 100vh;
+    padding: 48px;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.96)),
+        url("../../assets/poster/poster-principal.jpg");
+    background-size: cover;
+    background-position: center;
+    color: var(--white);
+}
+
+.burger-header {
+    max-width: 1100px;
+    margin: 0 auto 36px;
+    text-align: center;
+}
+
+.player-badge {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--black);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 900;
+    margin-bottom: 18px;
+}
+
+.burger-header h2 {
+    font-size: clamp(42px, 6vw, 76px);
+    line-height: 0.95;
+    text-transform: uppercase;
+}
+
+.burger-header h2 span {
+    display: block;
+    color: var(--yellow);
+}
+
+.burger-header p {
+    margin-top: 16px;
+    font-size: 22px;
+}
+
+.selection-counter {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--yellow);
+}
+
+.circle.active {
+    background: var(--yellow);
+}
+
+.burger-grid {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.burger-card {
+    position: relative;
+    border-radius: 28px;
+    background: rgba(12, 12, 12, 0.78);
+    border: 1px solid rgba(255, 187, 0, 0.22);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    transition: 0.35s;
+}
+
+.burger-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--yellow);
+    box-shadow:
+        0 42px 110px rgba(0, 0, 0, 0.78),
+        0 0 42px rgba(246, 179, 0, 0.2);
+}
+
+.burger-image {
+    width: 100%;
+    height: 240px;
+    overflow: hidden;
+    background: #000;
+}
+
+.burger-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: 0.45s;
+}
+
+.burger-card:hover .burger-image img {
+    transform: scale(1.08);
+}
+
+.burger-content {
+    padding: 24px;
+}
+
+.burger-badge {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--black);
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+.burger-card h3 {
+    font-size: 28px;
+    line-height: 1;
+    color: var(--yellow);
+    text-transform: uppercase;
+}
+
+.burger-card p {
+    margin-top: 12px;
+    font-size: 16px;
+    line-height: 1.45;
+    min-height: 48px;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.burger-card button {
+    width: 100%;
+    height: 54px;
+    margin-top: 22px;
+    border: none;
+    border-radius: 14px;
+    background: var(--yellow);
+    color: var(--black);
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.3s;
+}
+
+.burger-card button:hover {
+    transform: scale(1.03);
+}
+
+@media (max-width: 1100px) {
+    .burger-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .burger-screen {
+        padding: 28px;
+    }
+
+    .burger-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .burger-image {
+        height: 220px;
+    }
+}
+
+.burger-image {
+    border: none;
+    cursor: zoom-in;
+    padding: 0;
+}
+
+.burger-preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0, 0, 0, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.burger-preview-content {
+    position: relative;
+    max-width: 1100px;
+    width: 100%;
+}
+
+.burger-preview-content img {
+    width: 100%;
+    max-height: 82vh;
+    object-fit: contain;
+    border-radius: 24px;
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.9);
+}
+
+.burger-preview-close {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: var(--yellow);
+    color: var(--black);
+    font-size: 32px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.burger-preview-select {
+    width: 100%;
+    height: 60px;
+    margin-top: 18px;
+    border: none;
+    border-radius: 16px;
+    background: var(--yellow);
+    color: var(--black);
+    font-weight: 900;
+    text-transform: uppercase;
+    cursor: pointer;
+}

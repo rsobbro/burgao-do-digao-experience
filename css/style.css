@@ -1,0 +1,6 @@
+@import "./base/reset.css";
+@import "./themes/colors.css";
+@import "./layout/hero.css";
+@import "./pages/choice.css";
+@import "./pages/player.css";
+@import "./pages/burgers.css";

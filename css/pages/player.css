@@ -1,0 +1,82 @@
+.player-screen {
+    min-height: 100vh;
+    padding: 40px;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.95)),
+        url("../../assets/poster/poster-principal.jpg");
+    background-size: cover;
+    background-position: center;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-card {
+    width: 100%;
+    max-width: 560px;
+    padding: 42px;
+    border-radius: 30px;
+    background: rgba(12, 12, 12, 0.72);
+    border: 1px solid rgba(255, 187, 0, 0.22);
+    box-shadow: 0 35px 90px rgba(0, 0, 0, 0.65);
+}
+
+.player-tag {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--black);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 900;
+    margin-bottom: 24px;
+}
+
+.player-card h2 {
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 0.95;
+    text-transform: uppercase;
+    color: var(--white);
+}
+
+.player-card p {
+    margin-top: 20px;
+    font-size: 20px;
+    line-height: 1.45;
+    opacity: 0.9;
+}
+
+.player-card input {
+    width: 100%;
+    height: 64px;
+    margin-top: 30px;
+    padding: 0 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 187, 0, 0.35);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--white);
+    font-size: 20px;
+    outline: none;
+}
+
+.player-card input::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.player-card input:focus {
+    border-color: var(--yellow);
+}
+
+.player-button {
+    width: 100%;
+    height: 64px;
+    margin-top: 24px;
+    border: none;
+    border-radius: 18px;
+    background: var(--yellow);
+    color: var(--black);
+    font-size: 18px;
+    font-weight: 900;
+    text-transform: uppercase;
+    cursor: pointer;
+}

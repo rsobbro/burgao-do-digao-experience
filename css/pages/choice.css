@@ -1,0 +1,143 @@
+.choice-screen {
+    min-height: 100vh;
+    padding: 56px;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.94)),
+        url("../../assets/poster/poster-principal.jpg");
+    background-size: cover;
+    background-position: center;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.choice-header {
+    max-width: 960px;
+    margin: 0 auto 52px;
+    text-align: center;
+}
+
+.choice-header span {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--black);
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-weight: 900;
+    margin-bottom: 22px;
+}
+
+.choice-header h2 {
+    font-size: clamp(48px, 7vw, 92px);
+    line-height: 0.92;
+    text-transform: uppercase;
+    letter-spacing: -2px;
+}
+
+.choice-header p {
+    margin-top: 20px;
+    font-size: 22px;
+    opacity: 0.9;
+}
+
+.choice-grid {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(320px, 1fr));
+    gap: 32px;
+}
+
+.choice-card {
+    position: relative;
+    min-height: 360px;
+    padding: 42px;
+    border-radius: 32px;
+    background: rgba(12, 12, 12, 0.72);
+    border: 1px solid rgba(255, 187, 0, 0.22);
+    color: var(--white);
+    cursor: pointer;
+    text-align: left;
+    overflow: hidden;
+    transition: 0.35s;
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.choice-card:hover {
+    transform: translateY(-10px) scale(1.025);
+    border-color: var(--yellow);
+    box-shadow:
+        0 42px 110px rgba(0, 0, 0, 0.75),
+        0 0 40px rgba(246, 179, 0, 0.18);
+}
+
+.choice-shine {
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    top: -130px;
+    right: -120px;
+    background: rgba(255, 187, 0, 0.12);
+    border-radius: 50%;
+    filter: blur(42px);
+}
+
+.choice-icon {
+    position: relative;
+    z-index: 2;
+    font-size: 70px;
+    margin-bottom: 28px;
+}
+
+.choice-card h3 {
+    position: relative;
+    z-index: 2;
+    font-size: 38px;
+    color: var(--yellow);
+    margin-bottom: 18px;
+}
+
+.choice-card p {
+    position: relative;
+    z-index: 2;
+    font-size: 19px;
+    line-height: 1.55;
+    opacity: 0.9;
+    max-width: 440px;
+}
+
+.choice-card strong {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    margin-top: 34px;
+    background: var(--yellow);
+    color: var(--black);
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .choice-screen {
+        padding: 28px;
+    }
+
+    .choice-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .choice-card {
+        min-height: auto;
+        padding: 30px;
+    }
+
+    .choice-header h2 {
+        font-size: 48px;
+    }
+}
