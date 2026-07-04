@@ -1281,7 +1281,11 @@ function renderFamilyPaymentScreen() {
 function renderChefIndividualOrder(pedido, comCheckbox = false) {
     return `
         <div style="margin-top:20px;padding:22px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+
             ${comCheckbox ? `<label><input type="checkbox" class="chef-order-checkbox" value="${pedido.idFirestore}"> Selecionar</label><br><br>` : ""}
+
+            <strong>👤 ${pedido.nome}</strong><br>
+            🕒 ${pedido.data}<br>
             Status: 🟡 ${pedido.status || "Recebido"}<br><br>
 
             🍔 1º Tempo: ${pedido.primeiroBurger}<br>
@@ -1300,6 +1304,11 @@ function renderChefFamilyOrder(pedido, comCheckbox = false) {
     return `
         <div style="margin-top:26px;padding:24px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.35);">
             ${comCheckbox ? `<label><input type="checkbox" class="chef-order-checkbox" value="${pedido.idFirestore}"> Selecionar</label><br><br>` : ""}
+            <strong>👨‍👩‍👧‍👦 ${pedido.familiaNome}</strong><br>
+🕒 ${pedido.data}<br>
+Status: 🟡 ${pedido.status || "Recebido"}<br>
+Participantes: ${pedido.participantes.length}<br>
+🍟 Batata da família: ${pedido.batata}<br><br>
             Status: 🟡 ${pedido.status || "Recebido"}<br>
             Participantes: ${pedido.participantes.length}<br>
             🍟 Batata da família: ${pedido.batata}<br><br>
@@ -1469,9 +1478,6 @@ function renderSavedOrdersScreen() {
     const btnEnviarTodos = document.querySelector("#btnEnviarTodosPedidos");
 
     if (btnEnviarTodos) {
-        const btnEnviarTodos = document.querySelector("#btnEnviarTodosPedidos");
-
-if (btnEnviarTodos) {
 
     btnEnviarTodos.addEventListener("click", async () => {
 
@@ -1490,7 +1496,6 @@ if (btnEnviarTodos) {
     }
 
     document.querySelector("#btnVoltarHome").addEventListener("click", renderHome);
-}
 
 function salvarEdicaoPedidoLocal(index, mostrarAlerta = true) {
     const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
