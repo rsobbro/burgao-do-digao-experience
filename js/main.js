@@ -72,12 +72,21 @@ function renderHome() {
                 <button class="hero-button" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;" id="btnChef">
                     👨‍🍳 Central do Chef
                 </button>
+                <button class="hero-button" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;" id="btnPedidosSalvos">
+    📤 Enviar pedidos salvos
+</button>
+
+<button class="hero-button" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;" id="btnMeuPagamento">
+    🎲 Seu pagamento é
+</button>
             </div>
         </section>
     `;
 
     document.querySelector(".hero-button").addEventListener("click", renderOrderTypeScreen);
     document.querySelector("#btnChef").addEventListener("click", renderChefLogin);
+    document.querySelector("#btnPedidosSalvos").addEventListener("click", renderSavedOrdersScreen);
+document.querySelector("#btnMeuPagamento").addEventListener("click", renderMyPaymentsScreen);
 }
 
 function renderOrderTypeScreen() {
@@ -1284,4 +1293,119 @@ function renderChefFamilyOrder(pedido) {
             `).join("")}
         </div>
     `;
+}
+
+function renderSavedOrdersScreen() {
+    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card" style="max-width:900px;">
+                <span class="player-tag">📤 Pedidos Salvos</span>
+
+                <h2>Pedidos encontrados neste dispositivo</h2>
+
+                ${
+                    pedidos.length === 0
+                        ? `<p>Nenhum pedido salvo foi encontrado neste navegador.</p>`
+                        : `
+                            <p>
+                                Encontramos <strong>${pedidos.length}</strong> pedido(s) salvo(s).
+                            </p>
+
+                            ${pedidos.map((pedido, index) => `
+                                <div style="margin-top:20px;padding:20px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+                                    <strong>${index + 1}. ${pedido.tipo === "familia" ? pedido.familiaNome : pedido.nome}</strong><br>
+                                    ${pedido.data}<br><br>
+
+                                    ${
+                                        pedido.tipo === "familia"
+                                            ? `
+                                                👨‍👩‍👧‍👦 Pedido Família<br>
+                                                🍟 Batata: ${pedido.batata}<br>
+                                                Participantes: ${pedido.participantes?.length || 0}
+                                            `
+                                            : `
+                                                👤 Pedido Individual<br>
+                                                🍔 1º Burgão: ${pedido.primeiroBurger}<br>
+                                                🍟 Batata: ${pedido.batata}<br>
+                                                🍔 2º Burgão: ${pedido.segundoBurger}<br>
+                                                📝 Especial: ${pedido.pedidoEspecial}
+                                            `
+                                    }
+                                </div>
+                            `).join("")}
+
+                            <button class="player-button" id="btnEnviarPedidos">
+                                Enviar pedidos para o Chef
+                            </button>
+                        `
+                }
+
+                <button class="player-button" id="btnVoltarHome" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;">
+                    Voltar
+                </button>
+            </div>
+        </section>
+    `;
+
+    const btnEnviar = document.querySelector("#btnEnviarPedidos");
+
+    if (btnEnviar) {
+        btnEnviar.addEventListener("click", () => {
+            alert("Próxima etapa: conectar este envio ao Firebase.");
+        });
+    }
+
+    document.querySelector("#btnVoltarHome").addEventListener("click", renderHome);
+}
+
+function renderMyPaymentsScreen() {
+    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card" style="max-width:900px;">
+                <span class="player-tag">🎲 Seu pagamento é</span>
+
+                <h2>Missões salvas neste dispositivo</h2>
+
+                ${
+                    pedidos.length === 0
+                        ? `<p>Nenhuma missão encontrada neste navegador.</p>`
+                        : pedidos.map((pedido) => `
+                            <div style="margin-top:20px;padding:20px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+                                ${
+                                    pedido.tipo === "familia"
+                                        ? `
+                                            <strong>👨‍👩‍👧‍👦 ${pedido.familiaNome}</strong><br><br>
+
+                                            ${pedido.participantes.map((p) => `
+                                                <div style="margin-top:14px;padding:14px;border-radius:14px;background:rgba(0,0,0,.25);">
+                                                    👤 <strong>${p.nome}</strong><br><br>
+                                                    💳 <strong>${p.pagamentoNivel}</strong><br>
+                                                    ${p.pagamentoNome}<br>
+                                                    ${p.pagamentoTexto}
+                                                </div>
+                                            `).join("")}
+                                        `
+                                        : `
+                                            👤 <strong>${pedido.nome}</strong><br><br>
+                                            💳 <strong>${pedido.pagamentoNivel}</strong><br>
+                                            ${pedido.pagamentoNome}<br>
+                                            ${pedido.pagamentoTexto}
+                                        `
+                                }
+                            </div>
+                        `).join("")
+                }
+
+                <button class="player-button" id="btnVoltarHome" style="margin-top:24px;">
+                    Voltar
+                </button>
+            </div>
+        </section>
+    `;
+
+    document.querySelector("#btnVoltarHome").addEventListener("click", renderHome);
 }
