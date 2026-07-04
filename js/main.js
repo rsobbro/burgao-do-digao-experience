@@ -35,6 +35,9 @@ const pagamentos = [
 const pedidoAtual = {
     tipo: "individual",
     nome: "",
+    familiaNome: "",
+    participantes: [],
+    participanteAtualIndex: 0,
     primeiroBurger: null,
     batata: null,
     segundoBurger: null,
@@ -110,7 +113,7 @@ function renderOrderTypeScreen() {
             pedidoAtual.tipo = type === "family" ? "familia" : "individual";
 
             if (type === "individual") renderIndividualNameScreen();
-            if (type === "family") alert("Próxima etapa: pedido família");
+            if (type === "family") renderFamilyNameScreen();
         });
     });
 }
@@ -146,7 +149,7 @@ function renderBurgerSelection(tempo) {
     app.innerHTML = `
         <section class="burger-screen">
             <div class="burger-header">
-                <span class="player-badge">👤 ${pedidoAtual.nome}</span>
+                <span class="player-badge"> 👤 Pedido de ${pedidoAtual.nome} </span>
                 <h2>${isPrimeiroTempo ? "1º Tempo" : "2º Tempo"} <span>${isPrimeiroTempo ? "Escolha seu primeiro Burgão" : "Escolha seu segundo Burgão"}</span></h2>
                 <p>${isPrimeiroTempo ? "Escolha apenas UM Burgão para abrir a partida." : "Escolha apenas UM Burgão para fechar a partida."}</p>
                 <div class="selection-counter">
@@ -177,11 +180,24 @@ function selecionarBurger(burgerId) {
 
     if (tempoAtualBurger === "primeiro") {
         pedidoAtual.primeiroBurger = selectedBurger;
-        renderPotatoSelection();
-    } else {
-        pedidoAtual.segundoBurger = selectedBurger;
-        renderOrderSummary();
+
+        if (pedidoAtual.tipo === "familia") {
+            renderBurgerSelection("segundo");
+        } else {
+            renderPotatoSelection();
+        }
+
+        return;
     }
+
+    pedidoAtual.segundoBurger = selectedBurger;
+
+    if (pedidoAtual.tipo === "familia") {
+        renderSpecialRequestScreen();
+        return;
+    }
+
+    renderOrderSummary();
 }
 
 function burgerCard(burger) {
@@ -315,7 +331,12 @@ function renderSpecialRequestScreen() {
 
     document.querySelector("#btnMolhos").addEventListener("click", () => {
         pedidoAtual.pedidoEspecial = document.querySelector("#specialRequest").value.trim();
-        renderSaucesScreen();
+        if (pedidoAtual.tipo === "familia") {
+    concluirPedidoParticipanteFamilia();
+} else {
+    renderSaucesScreen();
+}
+
     });
 }
 
@@ -338,7 +359,11 @@ function renderSaucesScreen() {
     `;
 
     document.querySelector("#btnFinalizarPedido").addEventListener("click", () => {
-        renderPreparingScreen();
+        if (pedidoAtual.tipo === "familia") {
+    renderFamilyPreparingScreen();
+} else {
+    renderPreparingScreen();
+}
     });
 }
 
@@ -438,7 +463,9 @@ function renderPaymentScreen() {
         </section>
     `;
 
-    document.querySelector("#btnAceitarPagamento").addEventListener("click", renderFinalConfirmation);
+    document.querySelector("#btnAceitarPagamento").addEventListener("click", () => {
+    renderFinalConfirmation();
+});
 
     const btnTrocar = document.querySelector("#btnTrocarPagamento");
 
@@ -466,42 +493,118 @@ function salvarPedido() {
         id: Date.now(),
         data: new Date().toLocaleString("pt-BR"),
         tipo: pedidoAtual.tipo,
+        status: "Recebido",
+
         nome: pedidoAtual.nome,
-        primeiroBurger: pedidoAtual.primeiroBurger.nome,
-        batata: pedidoAtual.batata.nome,
-        segundoBurger: pedidoAtual.segundoBurger.nome,
+        familiaNome: pedidoAtual.familiaNome,
+
+        primeiroBurger: pedidoAtual.primeiroBurger?.nome || "",
+        batata: pedidoAtual.batata?.nome || "",
+        segundoBurger: pedidoAtual.segundoBurger?.nome || "",
         pedidoEspecial: pedidoAtual.pedidoEspecial || "Nenhuma observação",
-        pagamentoNivel: pedidoAtual.pagamento.nivel,
-        pagamentoNome: pedidoAtual.pagamento.nome,
-        pagamentoTexto: pedidoAtual.pagamento.texto,
-        trocasPagamento: pedidoAtual.trocasPagamento
+
+        pagamentoNivel: pedidoAtual.pagamento?.nivel || "",
+        pagamentoNome: pedidoAtual.pagamento?.nome || "",
+        pagamentoTexto: pedidoAtual.pagamento?.texto || "",
+        trocasPagamento: pedidoAtual.trocasPagamento || 0,
+
+        participantes: pedidoAtual.tipo === "familia"
+            ? pedidoAtual.participantes.map((p) => ({
+                nome: p.nome,
+                primeiroBurger: p.primeiroBurger?.nome || "",
+                segundoBurger: p.segundoBurger?.nome || "",
+                pedidoEspecial: p.pedidoEspecial || "Nenhuma observação",
+                pagamentoNivel: p.pagamento?.nivel || "",
+                pagamentoNome: p.pagamento?.nome || "",
+                pagamentoTexto: p.pagamento?.texto || "",
+                trocasPagamento: p.trocasPagamento || 0
+            }))
+            : []
     };
 
     pedidos.push(novoPedido);
     localStorage.setItem("pedidosBurgao", JSON.stringify(pedidos));
 }
 
-function renderFinalConfirmation() {
+function concluirPedidoParticipanteFamilia() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+
+    participante.primeiroBurger = pedidoAtual.primeiroBurger;
+    participante.segundoBurger = pedidoAtual.segundoBurger;
+    participante.pedidoEspecial = pedidoAtual.pedidoEspecial;
+
+    pedidoAtual.participanteAtualIndex++;
+
+    if (pedidoAtual.participanteAtualIndex < pedidoAtual.participantes.length) {
+        renderNextFamilyParticipantScreen();
+        return;
+    }
+
+    renderFamilyPotatoSelection();
+}
+
+    function renderFinalConfirmation() {
     salvarPedido();
+
+    const resumoFamilia = pedidoAtual.tipo === "familia"
+        ? pedidoAtual.participantes.map((participante) => `
+            <div style="margin-top:20px;padding:20px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+                <strong>${participante.nome}</strong>
+                <br><br>
+                🍔 1º Burgão:<br>${participante.primeiroBurger.nome}
+                <br><br>
+                🍔 2º Burgão:<br>${participante.segundoBurger.nome}
+                <br><br>
+                📝 Pedido Especial:<br>${participante.pedidoEspecial || "Nenhuma observação"}
+                <br><br>
+                💳 Pagamento:<br>
+                <strong>${participante.pagamento.nivel}</strong><br>
+                ${participante.pagamento.nome}<br>
+                ${participante.pagamento.texto}
+            </div>
+        `).join("")
+        : `
+            <p>
+                👤 <strong>${pedidoAtual.nome}</strong><br><br>
+                🍔 1º Tempo:<br>${pedidoAtual.primeiroBurger.nome}<br><br>
+                🍟 Intervalo:<br>${pedidoAtual.batata.nome}<br><br>
+                🍔 2º Tempo:<br>${pedidoAtual.segundoBurger.nome}<br><br>
+                📝 Pedido Especial:<br>${pedidoAtual.pedidoEspecial || "Nenhuma observação"}<br><br>
+                💳 Seu pagamento será:<br>
+                <strong>${pedidoAtual.pagamento.nivel}</strong><br>
+                ${pedidoAtual.pagamento.nome}<br>
+                ${pedidoAtual.pagamento.texto}
+            </p>
+        `;
 
     app.innerHTML = `
         <section class="player-screen">
-            <div class="player-card">
+            <div class="player-card" style="max-width:${pedidoAtual.tipo === "familia" ? "900px" : "560px"};">
                 <span class="player-tag">🏆 Pedido Confirmado</span>
-                <h2>Você está escalado!</h2>
-                <p>
-                    👤 <strong>${pedidoAtual.nome}</strong><br><br>
-                    🍔 1º Tempo:<br>${pedidoAtual.primeiroBurger.nome}<br><br>
-                    🍟 Intervalo:<br>${pedidoAtual.batata.nome}<br><br>
-                    🍔 2º Tempo:<br>${pedidoAtual.segundoBurger.nome}<br><br>
-                    📝 Pedido Especial:<br>${pedidoAtual.pedidoEspecial || "Nenhuma observação"}<br><br>
-                    💳 Seu pagamento será:<br>
-                    <strong>${pedidoAtual.pagamento.nivel}</strong><br>
-                    ${pedidoAtual.pagamento.nome}<br>
-                    ${pedidoAtual.pagamento.texto}
-                </p>
-                <button class="player-button" onclick="location.reload()">Fazer novo pedido</button>
-                <button class="player-button" id="btnVerChef" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;">Ver Central do Chef</button>
+
+                <h2>
+                    ${pedidoAtual.tipo === "familia" ? "Família escalada!" : "Você está escalado!"}
+                </h2>
+
+                ${
+                    pedidoAtual.tipo === "familia"
+                        ? `<p>👨‍👩‍👧‍👦 <strong>${pedidoAtual.familiaNome}</strong></p>
+                           <p>🍟 Batata da família:<br><strong>${pedidoAtual.batata.nome}</strong></p>
+                           ${resumoFamilia}`
+                        : resumoFamilia
+                }
+
+                <button class="player-button" onclick="location.reload()">
+                    Fazer novo pedido
+                </button>
+
+                <button
+                    class="player-button"
+                    id="btnVerChef"
+                    style="margin-top:14px;background:rgba(255,255,255,.12);color:white;"
+                >
+                    Ver Central do Chef
+                </button>
             </div>
         </section>
     `;
@@ -517,9 +620,7 @@ function renderChefLogin() {
 
                 <h2>Central do Chef</h2>
 
-                <p>
-                    Esta área é exclusiva para o Chef responsável pelos pedidos.
-                </p>
+                <p>Digite a senha para acessar os pedidos.</p>
 
                 <input
                     type="password"
@@ -543,18 +644,34 @@ function renderChefLogin() {
         </section>
     `;
 
-    document.querySelector("#btnEntrarChef").addEventListener("click", () => {
-        const senha = document.querySelector("#chefPassword").value.trim();
+    const inputSenha = document.querySelector("#chefPassword");
+    const btnEntrar = document.querySelector("#btnEntrarChef");
+    const btnVoltar = document.querySelector("#btnVoltarInicio");
 
-        if (senha !== CHEF_PASSWORD) {
+    function validarAcessoChef() {
+        const senhaDigitada = inputSenha.value.trim();
+
+        if (senhaDigitada !== CHEF_PASSWORD) {
             alert("Senha incorreta. Área exclusiva do Chef.");
+            inputSenha.value = "";
+            inputSenha.focus();
             return;
         }
 
         renderChefPanel();
+    }
+
+    btnEntrar.addEventListener("click", validarAcessoChef);
+
+    inputSenha.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            validarAcessoChef();
+        }
     });
 
-    document.querySelector("#btnVoltarInicio").addEventListener("click", renderHome);
+    btnVoltar.addEventListener("click", renderHome);
+
+    inputSenha.focus();
 }
 
 function renderChefPanel() {
@@ -562,7 +679,7 @@ function renderChefPanel() {
 
     app.innerHTML = `
         <section class="player-screen">
-            <div class="player-card" style="max-width:900px;">
+            <div class="player-card" style="max-width:1000px;">
                 <span class="player-tag">👨‍🍳 Central do Chef</span>
                 <h2>Pedidos recebidos</h2>
 
@@ -571,20 +688,10 @@ function renderChefPanel() {
                 ${
                     pedidos.length === 0
                         ? `<p>Nenhum pedido recebido ainda.</p>`
-                        : pedidos.map((pedido) => `
-                            <div style="margin-top:20px;padding:20px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
-                                <strong>${pedido.nome}</strong><br>
-                                ${pedido.data}<br><br>
-                                🍔 1º Tempo: ${pedido.primeiroBurger}<br>
-                                🍟 Intervalo: ${pedido.batata}<br>
-                                🍔 2º Tempo: ${pedido.segundoBurger}<br>
-                                📝 Especial: ${pedido.pedidoEspecial}<br><br>
-                                💳 ${pedido.pagamentoNivel}<br>
-                                ${pedido.pagamentoNome}<br>
-                                ${pedido.pagamentoTexto}<br>
-                                🔁 Trocas: ${pedido.trocasPagamento}
-                            </div>
-                        `).join("")
+                        : pedidos.map((pedido) => pedido.tipo === "familia"
+                            ? renderChefFamilyOrder(pedido)
+                            : renderChefIndividualOrder(pedido)
+                        ).join("")
                 }
 
                 <button class="player-button" id="btnExportarCSV">
@@ -730,4 +837,451 @@ function renderPreparingScreen() {
             }, 1000);
         }
     }, 1200);
+}
+
+function renderFamilyNameScreen() {
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card">
+                <span class="player-tag">👨‍👩‍👧‍👦 Escalação da Família</span>
+
+                <h2>Nome da família</h2>
+
+                <p>
+                    Informe o nome da família ou do time que participará da
+                    Burgão do Digão Experience.
+                </p>
+
+                <input
+                    type="text"
+                    id="familyName"
+                    placeholder="Ex.: Família Oliveira"
+                    autocomplete="off"
+                />
+
+                <button class="player-button" id="btnFamilyName">
+                    Continuar
+                </button>
+            </div>
+        </section>
+    `;
+
+    document.querySelector("#btnFamilyName").addEventListener("click", () => {
+        const familyName = document.querySelector("#familyName").value.trim();
+
+        if (!familyName) {
+            alert("Informe o nome da família para continuar.");
+            return;
+        }
+
+        pedidoAtual.familiaNome = familyName;
+        pedidoAtual.participantes = [];
+
+        renderFamilyParticipantsScreen();
+    });
+}
+
+function renderFamilyParticipantsScreen() {
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card">
+                <span class="player-tag">⚽ Escalação do Time</span>
+
+                <h2>Quem vai participar?</h2>
+
+                <p>
+                    Adicione os nomes das pessoas que farão parte do pedido da família.
+                </p>
+
+                <input
+                    type="text"
+                    id="participantName"
+                    placeholder="Nome do participante"
+                    autocomplete="off"
+                />
+
+                <button class="player-button" id="btnAddParticipant">
+                    + Adicionar participante
+                </button>
+
+                <div id="participantsList" style="margin-top:24px;"></div>
+
+                <button
+                    class="player-button"
+                    id="btnStartFamilyOrder"
+                    style="margin-top:24px;background:rgba(255,255,255,.12);color:white;"
+                >
+                    Iniciar pedidos da família
+                </button>
+            </div>
+        </section>
+    `;
+
+    atualizarListaParticipantes();
+
+    document.querySelector("#btnAddParticipant").addEventListener("click", () => {
+        const input = document.querySelector("#participantName");
+        const name = input.value.trim();
+
+        if (!name) {
+            alert("Informe o nome do participante.");
+            return;
+        }
+
+        pedidoAtual.participantes.push({
+            nome: name,
+            primeiroBurger: null,
+            batata: null,
+            segundoBurger: null,
+            pedidoEspecial: "",
+            pagamento: null,
+            trocasPagamento: 0
+        });
+
+        input.value = "";
+        atualizarListaParticipantes();
+    });
+
+    document.querySelector("#btnStartFamilyOrder").addEventListener("click", () => {
+        if (pedidoAtual.participantes.length === 0) {
+            alert("Adicione pelo menos um participante.");
+            return;
+        }
+
+        pedidoAtual.participanteAtualIndex = 0;
+
+        iniciarPedidoParticipanteFamilia();
+    });
+}
+
+function atualizarListaParticipantes() {
+    const list = document.querySelector("#participantsList");
+
+    if (!list) return;
+
+    if (pedidoAtual.participantes.length === 0) {
+        list.innerHTML = `<p>Nenhum participante adicionado ainda.</p>`;
+        return;
+    }
+
+    list.innerHTML = pedidoAtual.participantes.map((participante, index) => `
+        <div style="
+            margin-top:12px;
+            padding:14px;
+            border-radius:14px;
+            background:rgba(255,255,255,.08);
+            border:1px solid rgba(255,187,0,.22);
+        ">
+            ${index + 1}. ${participante.nome}
+        </div>
+    `).join("");
+}
+
+function iniciarPedidoParticipanteFamilia() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+
+    pedidoAtual.nome = participante.nome;
+    pedidoAtual.primeiroBurger = null;
+    pedidoAtual.batata = null;
+    pedidoAtual.segundoBurger = null;
+    pedidoAtual.pedidoEspecial = "";
+    pedidoAtual.pagamento = null;
+    pedidoAtual.trocasPagamento = 0;
+
+    renderBurgerSelection("primeiro");
+}
+
+function concluirPedidoParticipanteFamilia() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+
+    participante.primeiroBurger = pedidoAtual.primeiroBurger;
+    participante.segundoBurger = pedidoAtual.segundoBurger;
+    participante.pedidoEspecial = pedidoAtual.pedidoEspecial;
+
+    pedidoAtual.participanteAtualIndex++;
+
+    if (pedidoAtual.participanteAtualIndex < pedidoAtual.participantes.length) {
+        renderNextFamilyParticipantScreen();
+        return;
+    }
+
+    renderFamilyPotatoSelection();
+}
+
+function renderNextFamilyParticipantScreen() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card">
+                <span class="player-tag">👨‍👩‍👧‍👦 Modo Família</span>
+
+                <h2>Agora é a vez de ${participante.nome}</h2>
+
+                <p>
+                    O próximo participante vai escolher seus 2 Burgões.
+                </p>
+
+                <button class="player-button" id="btnProximoParticipante">
+                    Começar pedido de ${participante.nome}
+                </button>
+            </div>
+        </section>
+    `;
+
+    document.querySelector("#btnProximoParticipante").addEventListener("click", () => {
+        iniciarPedidoParticipanteFamilia();
+    });
+}
+
+function renderFamilyPotatoSelection() {
+    const batatasFamilia = batatas.filter((batata) =>
+        batata.nome === "Finalíssima" || batata.nome === "Hexa Supremo"
+    );
+
+    app.innerHTML = `
+        <section class="burger-screen">
+            <div class="burger-header">
+                <span class="player-badge">🍟 Batata da Família</span>
+
+                <h2>
+                    Escolha a batata
+                    <span>da família</span>
+                </h2>
+
+                <p>
+                    Agora escolha uma única batata para toda a família.
+                </p>
+            </div>
+
+            <div class="burger-grid">
+                ${batatasFamilia.map((batata) => potatoCard(batata)).join("")}
+            </div>
+        </section>
+    `;
+
+    document.querySelectorAll(".potato-select-button").forEach((button) => {
+        button.addEventListener("click", () => {
+            const potatoId = Number(button.dataset.id);
+            pedidoAtual.batata = batatas.find((batata) => batata.id === potatoId);
+
+            renderSaucesScreen();
+        });
+    });
+}
+
+function renderFamilyPreparingScreen() {
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card">
+                <span class="player-tag">👨‍🍳 Cozinha da Família</span>
+
+                <h2>Preparando todos os pedidos...</h2>
+
+                <p id="preparingText">
+                    🍔 Organizando a escalação da família...
+                </p>
+
+                <div style="
+                    width:100%;
+                    height:18px;
+                    margin-top:28px;
+                    border-radius:999px;
+                    background:rgba(255,255,255,.12);
+                    overflow:hidden;
+                ">
+                    <div id="preparingBar" style="
+                        width:0%;
+                        height:100%;
+                        background:#f2b705;
+                        border-radius:999px;
+                        transition:.8s;
+                    "></div>
+                </div>
+
+                <p id="preparingPercent" style="margin-top:18px;">
+                    0%
+                </p>
+            </div>
+        </section>
+    `;
+
+    const steps = [
+        { text: "🍔 Conferindo os Burgões da família...", percent: 25 },
+        { text: "🍟 Separando a batata da família...", percent: 50 },
+        { text: "🥣 Preparando os molhos...", percent: 75 },
+        { text: "🎲 Iniciando sorteio das missões...", percent: 100 }
+    ];
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+        const step = steps[index];
+
+        document.querySelector("#preparingText").innerHTML = step.text;
+        document.querySelector("#preparingBar").style.width = `${step.percent}%`;
+        document.querySelector("#preparingPercent").innerHTML = `${step.percent}%`;
+
+        index++;
+
+        if (index === steps.length) {
+            clearInterval(interval);
+
+            setTimeout(() => {
+                pedidoAtual.participanteAtualIndex = 0;
+                iniciarSorteioMissaoFamilia();
+            }, 1000);
+        }
+    }, 1200);
+}
+
+function iniciarSorteioMissaoFamilia() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+
+    participante.pagamento = sortearPagamento();
+    participante.trocasPagamento = 0;
+
+    renderFamilyPaymentScreen();
+}
+
+function renderFamilyPaymentScreen() {
+    const participante = pedidoAtual.participantes[pedidoAtual.participanteAtualIndex];
+    const pagamento = participante.pagamento;
+    const tentativa = participante.trocasPagamento + 1;
+    const missaoDefinitiva = participante.trocasPagamento >= 2;
+
+    app.innerHTML = `
+        <section class="player-screen">
+            <div class="player-card">
+                <span class="player-tag">🎰 Missão da Família</span>
+
+                <h2>Missão de ${participante.nome}</h2>
+
+                <p>
+                    Tentativa ${tentativa} de 3
+                    <br><br>
+                    ${
+                        missaoDefinitiva
+                            ? "🏁 <strong>Missão definitiva</strong>"
+                            : "Pode aceitar ou arriscar uma troca."
+                    }
+                </p>
+
+                <div style="
+                    margin-top:30px;
+                    padding:30px;
+                    border-radius:28px;
+                    background:linear-gradient(145deg, rgba(242,183,5,.18), rgba(0,0,0,.85));
+                    border:2px solid rgba(242,183,5,.65);
+                    box-shadow:0 0 45px rgba(242,183,5,.22);
+                    text-align:center;
+                ">
+                    <div style="font-size:54px;margin-bottom:12px;">🏆</div>
+
+                    <p style="font-size:20px;color:#f2b705;font-weight:900;text-transform:uppercase;">
+                        ${pagamento.nivel}
+                    </p>
+
+                    <h3 style="font-size:36px;margin-top:14px;color:white;text-transform:uppercase;">
+                        ${pagamento.nome}
+                    </h3>
+
+                    <p style="margin-top:22px;font-size:20px;line-height:1.5;color:rgba(255,255,255,.92);">
+                        ${pagamento.texto}
+                    </p>
+                </div>
+
+                <button class="player-button" id="btnAceitarMissaoFamilia">
+                    Aceitar missão
+                </button>
+
+                ${
+                    missaoDefinitiva
+                        ? ""
+                        : `
+                            <button
+                                class="player-button"
+                                id="btnTrocarMissaoFamilia"
+                                style="margin-top:14px;background:rgba(255,255,255,.12);color:white;"
+                            >
+                                Trocar missão
+                            </button>
+                        `
+                }
+            </div>
+        </section>
+    `;
+
+    document.querySelector("#btnAceitarMissaoFamilia").addEventListener("click", () => {
+        pedidoAtual.participanteAtualIndex++;
+
+        if (pedidoAtual.participanteAtualIndex < pedidoAtual.participantes.length) {
+            iniciarSorteioMissaoFamilia();
+            return;
+        }
+
+        renderFinalConfirmation();
+    });
+
+    const btnTrocar = document.querySelector("#btnTrocarMissaoFamilia");
+
+    if (btnTrocar) {
+        btnTrocar.addEventListener("click", () => {
+            const ultimaChance = participante.trocasPagamento === 1;
+
+            const mensagem = ultimaChance
+                ? "Última chance! Se trocar agora, a próxima missão será definitiva. Deseja arriscar?"
+                : "Atenção! A próxima missão pode ser mais fácil... ou muito mais difícil. Deseja trocar?";
+
+            if (!confirm(mensagem)) return;
+
+            participante.trocasPagamento++;
+            participante.pagamento = sortearPagamento();
+
+            renderFamilyPaymentScreen();
+        });
+    }
+}
+
+function renderChefIndividualOrder(pedido) {
+    return `
+        <div style="margin-top:20px;padding:22px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+            <strong>👤 ${pedido.nome}</strong><br>
+            ${pedido.data}<br>
+            Status: 🟡 ${pedido.status || "Recebido"}<br><br>
+
+            🍔 1º Tempo: ${pedido.primeiroBurger}<br>
+            🍟 Intervalo: ${pedido.batata}<br>
+            🍔 2º Tempo: ${pedido.segundoBurger}<br>
+            📝 Especial: ${pedido.pedidoEspecial}<br><br>
+
+            💳 ${pedido.pagamentoNivel}<br>
+            ${pedido.pagamentoNome}<br>
+            ${pedido.pagamentoTexto}
+        </div>
+    `;
+}
+
+function renderChefFamilyOrder(pedido) {
+    return `
+        <div style="margin-top:26px;padding:24px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.35);">
+            <strong>👨‍👩‍👧‍👦 ${pedido.familiaNome}</strong><br>
+            ${pedido.data}<br>
+            Status: 🟡 ${pedido.status || "Recebido"}<br>
+            Participantes: ${pedido.participantes.length}<br>
+            🍟 Batata da família: ${pedido.batata}<br><br>
+
+            ${pedido.participantes.map((p) => `
+                <div style="margin-top:16px;padding:16px;border-radius:16px;background:rgba(0,0,0,.25);">
+                    <strong>👤 ${p.nome}</strong><br><br>
+                    🍔 1º Burgão: ${p.primeiroBurger}<br>
+                    🍔 2º Burgão: ${p.segundoBurger}<br>
+                    📝 Especial: ${p.pedidoEspecial}<br><br>
+                    💳 ${p.pagamentoNivel}<br>
+                    ${p.pagamentoNome}<br>
+                    ${p.pagamentoTexto}
+                </div>
+            `).join("")}
+        </div>
+    `;
 }
