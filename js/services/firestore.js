@@ -54,3 +54,23 @@ async function buscarPedidosFirestore() {
     }
 
 }
+
+async function deletarPedidosFirestore(ids) {
+    if (!ids || ids.length === 0) {
+        alert("Selecione pelo menos um pedido para excluir.");
+        return false;
+    }
+
+    try {
+        for (const id of ids) {
+            await db.collection("pedidos").doc(id).delete();
+        }
+
+        alert(`${ids.length} pedido(s) excluído(s) com sucesso.`);
+        return true;
+    } catch (error) {
+        console.error("Erro ao excluir pedidos:", error);
+        alert("Erro ao excluir pedidos.");
+        return false;
+    }
+}

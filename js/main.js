@@ -700,14 +700,18 @@ async function renderChefPanel() {
                     pedidos.length === 0
                         ? `<p>Nenhum pedido recebido ainda.</p>`
                         : pedidos.map((pedido) => pedido.tipo === "familia"
-                            ? renderChefFamilyOrder(pedido)
-                            : renderChefIndividualOrder(pedido)
+                            ? renderChefFamilyOrder(pedido, true)
+: renderChefIndividualOrder(pedido, true)
                         ).join("")
                 }
 
                 <button class="player-button" id="btnExportarCSV">
                     Exportar CSV
                 </button>
+
+                <button class="player-button" id="btnExcluirSelecionados" style="margin-top:14px;background:rgba(255,60,60,.85);color:white;">
+    🗑 Excluir selecionados
+</button>
 
                 <button class="player-button" id="btnLimparPedidos" style="margin-top:14px;background:rgba(255,255,255,.12);color:white;">
                     Limpar pedidos
@@ -721,6 +725,26 @@ async function renderChefPanel() {
     `;
 
     document.querySelector("#btnExportarCSV").addEventListener("click", exportarCSV);
+
+    document.querySelector("#btnExcluirSelecionados").addEventListener("click", async () => {
+    const selecionados = Array.from(document.querySelectorAll(".chef-order-checkbox:checked"))
+        .map((checkbox) => checkbox.value);
+
+    if (selecionados.length === 0) {
+        alert("Selecione pelo menos um pedido.");
+        return;
+    }
+
+    if (!confirm(`Deseja realmente excluir ${selecionados.length} pedido(s)?`)) {
+        return;
+    }
+
+    const sucesso = await deletarPedidosFirestore(selecionados);
+
+    if (sucesso) {
+        await renderChefPanel();
+    }
+});
 
     document.querySelector("#btnLimparPedidos").addEventListener("click", () => {
         if (confirm("Tem certeza que deseja apagar todos os pedidos?")) {
@@ -1254,11 +1278,10 @@ function renderFamilyPaymentScreen() {
     }
 }
 
-function renderChefIndividualOrder(pedido) {
+function renderChefIndividualOrder(pedido, comCheckbox = false) {
     return `
         <div style="margin-top:20px;padding:22px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
-            <strong>👤 ${pedido.nome}</strong><br>
-            ${pedido.data}<br>
+            ${comCheckbox ? `<label><input type="checkbox" class="chef-order-checkbox" value="${pedido.idFirestore}"> Selecionar</label><br><br>` : ""}
             Status: 🟡 ${pedido.status || "Recebido"}<br><br>
 
             🍔 1º Tempo: ${pedido.primeiroBurger}<br>
@@ -1273,11 +1296,10 @@ function renderChefIndividualOrder(pedido) {
     `;
 }
 
-function renderChefFamilyOrder(pedido) {
+function renderChefFamilyOrder(pedido, comCheckbox = false) {
     return `
         <div style="margin-top:26px;padding:24px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.35);">
-            <strong>👨‍👩‍👧‍👦 ${pedido.familiaNome}</strong><br>
-            ${pedido.data}<br>
+            ${comCheckbox ? `<label><input type="checkbox" class="chef-order-checkbox" value="${pedido.idFirestore}"> Selecionar</label><br><br>` : ""}
             Status: 🟡 ${pedido.status || "Recebido"}<br>
             Participantes: ${pedido.participantes.length}<br>
             🍟 Batata da família: ${pedido.batata}<br><br>
@@ -1428,20 +1450,43 @@ function renderSavedOrdersScreen() {
     });
 
     document.querySelectorAll(".btnEnviarPedidoUnico").forEach((button) => {
-        button.addEventListener("click", () => {
-            const index = Number(button.dataset.index);
-            const pedidosAtualizados = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
-            enviarPedidosParaFirestore([pedidosAtualizados[index]]);
-        });
+    button.addEventListener("click", async () => {
+
+        const index = Number(button.dataset.index);
+
+        const pedidosAtualizados =
+            JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+
+        await enviarPedidosParaFirestore([
+            pedidosAtualizados[index]
+        ]);
+
+        renderHome();
+
     });
+});
 
     const btnEnviarTodos = document.querySelector("#btnEnviarTodosPedidos");
 
     if (btnEnviarTodos) {
-        btnEnviarTodos.addEventListener("click", () => {
-            const pedidosAtualizados = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
-            enviarPedidosParaFirestore(pedidosAtualizados);
-        });
+        const btnEnviarTodos = document.querySelector("#btnEnviarTodosPedidos");
+
+if (btnEnviarTodos) {
+
+    btnEnviarTodos.addEventListener("click", async () => {
+
+        const pedidosAtualizados =
+            JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+
+        await enviarPedidosParaFirestore(
+            pedidosAtualizados
+        );
+
+        renderHome();
+
+    });
+
+}
     }
 
     document.querySelector("#btnVoltarHome").addEventListener("click", renderHome);
