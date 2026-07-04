@@ -47,6 +47,8 @@ const pedidoAtual = {
 };
 
 let tempoAtualBurger = "primeiro";
+let modoEdicao = false;
+let pedidoEditandoIndex = null;
 
 renderHome();
 
@@ -657,7 +659,7 @@ function renderChefLogin() {
     const btnEntrar = document.querySelector("#btnEntrarChef");
     const btnVoltar = document.querySelector("#btnVoltarInicio");
 
-    function validarAcessoChef() {
+    async function validarAcessoChef() {
         const senhaDigitada = inputSenha.value.trim();
 
         if (senhaDigitada !== CHEF_PASSWORD) {
@@ -667,7 +669,7 @@ function renderChefLogin() {
             return;
         }
 
-        renderChefPanel();
+        await renderChefPanel();
     }
 
     btnEntrar.addEventListener("click", validarAcessoChef);
@@ -683,8 +685,8 @@ function renderChefLogin() {
     inputSenha.focus();
 }
 
-function renderChefPanel() {
-    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+async function renderChefPanel() {
+    const pedidos = await buscarPedidosFirestore();
 
     app.innerHTML = `
         <section class="player-screen">
@@ -1295,15 +1297,77 @@ function renderChefFamilyOrder(pedido) {
     `;
 }
 
+function montarSelectBurger(valorAtual, classe, orderIndex, campo, participantName = "") {
+    return `
+        <select
+            class="${classe}"
+            data-order-index="${orderIndex}"
+            data-field="${campo}"
+            data-participant-name="${participantName}"
+            style="width:100%;margin-top:10px;padding:12px;border-radius:12px;background:#111;color:white;border:1px solid rgba(255,187,0,.35);"
+        >
+            ${hamburgueres.map((burger) => `
+                <option value="${burger.nome}" ${burger.nome === valorAtual ? "selected" : ""}>
+                    ${burger.nome}
+                </option>
+            `).join("")}
+        </select>
+    `;
+}
+
+function montarSelectBurger(valorAtual, classe, orderIndex, campo, participantName = "") {
+    return `
+        <select
+            class="${classe}"
+            data-order-index="${orderIndex}"
+            data-field="${campo}"
+            data-participant-name="${participantName}"
+            style="width:100%;margin-top:10px;margin-bottom:18px;padding:14px;border-radius:14px;background:#111;color:white;border:1px solid rgba(255,187,0,.45);font-size:16px;"
+        >
+            ${hamburgueres.map((burger) => `
+                <option value="${burger.nome}" ${burger.nome === valorAtual ? "selected" : ""}>
+                    ${burger.nome}
+                </option>
+            `).join("")}
+        </select>
+    `;
+}
+
+function editarPedidoLocal(index) {
+    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+    const pedido = pedidos[index];
+
+    if (!pedido) return;
+
+    modoEdicao = true;
+    pedidoEditandoIndex = index;
+
+    pedidoAtual.tipo = pedido.tipo;
+    pedidoAtual.nome = pedido.nome || "";
+    pedidoAtual.familiaNome = pedido.familiaNome || "";
+    pedidoAtual.primeiroBurger = hamburgueres.find(b => b.nome === pedido.primeiroBurger) || null;
+    pedidoAtual.segundoBurger = hamburgueres.find(b => b.nome === pedido.segundoBurger) || null;
+    pedidoAtual.batata = batatas.find(b => b.nome === pedido.batata) || null;
+    pedidoAtual.pedidoEspecial = pedido.pedidoEspecial || "";
+    pedidoAtual.pagamento = {
+        nivel: pedido.pagamentoNivel,
+        nome: pedido.pagamentoNome,
+        texto: pedido.pagamentoTexto
+    };
+    pedidoAtual.trocasPagamento = pedido.trocasPagamento || 0;
+
+    renderBurgerSelection("primeiro");
+}
+
 function renderSavedOrdersScreen() {
     const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
 
     app.innerHTML = `
         <section class="player-screen">
-            <div class="player-card" style="max-width:900px;">
+            <div class="player-card" style="max-width:1000px;">
                 <span class="player-tag">📤 Pedidos Salvos</span>
 
-                <h2>Pedidos encontrados neste dispositivo</h2>
+                <h2>Conferir antes de enviar</h2>
 
                 ${
                     pedidos.length === 0
@@ -1311,33 +1375,41 @@ function renderSavedOrdersScreen() {
                         : `
                             <p>
                                 Encontramos <strong>${pedidos.length}</strong> pedido(s) salvo(s).
+                                Você pode conferir, editar e depois enviar para o Chef.
                             </p>
 
                             ${pedidos.map((pedido, index) => `
-                                <div style="margin-top:20px;padding:20px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
+                                <div style="margin-top:24px;padding:22px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,187,0,.25);">
                                     <strong>${index + 1}. ${pedido.tipo === "familia" ? pedido.familiaNome : pedido.nome}</strong><br>
                                     ${pedido.data}<br><br>
 
-                                    ${
-                                        pedido.tipo === "familia"
-                                            ? `
-                                                👨‍👩‍👧‍👦 Pedido Família<br>
-                                                🍟 Batata: ${pedido.batata}<br>
-                                                Participantes: ${pedido.participantes?.length || 0}
-                                            `
-                                            : `
-                                                👤 Pedido Individual<br>
-                                                🍔 1º Burgão: ${pedido.primeiroBurger}<br>
-                                                🍟 Batata: ${pedido.batata}<br>
-                                                🍔 2º Burgão: ${pedido.segundoBurger}<br>
-                                                📝 Especial: ${pedido.pedidoEspecial}
-                                            `
+                                    ${pedido.tipo === "familia"
+                                        ? `
+                                            👨‍👩‍👧‍👦 <strong>Pedido Família</strong><br>
+                                            🍟 Batata: ${pedido.batata}<br>
+                                            Participantes: ${pedido.participantes?.length || 0}
+                                        `
+                                        : `
+                                            👤 <strong>Pedido Individual</strong><br>
+                                            🍔 1º Burgão: ${pedido.primeiroBurger}<br>
+                                            🍟 Batata: ${pedido.batata}<br>
+                                            🍔 2º Burgão: ${pedido.segundoBurger}<br>
+                                            📝 Observação: ${pedido.pedidoEspecial || "Nenhuma observação"}
+                                        `
                                     }
+
+                                    <button class="player-button btnEditarPedido" data-index="${index}" style="margin-top:16px;background:rgba(255,255,255,.12);color:white;">
+                                        Editar pedido
+                                    </button>
+
+                                    <button class="player-button btnEnviarPedidoUnico" data-index="${index}" style="margin-top:12px;">
+                                        Enviar este pedido
+                                    </button>
                                 </div>
                             `).join("")}
 
-                            <button class="player-button" id="btnEnviarPedidos">
-                                Enviar pedidos para o Chef
+                            <button class="player-button" id="btnEnviarTodosPedidos" style="margin-top:24px;">
+                                Enviar todos os pedidos
                             </button>
                         `
                 }
@@ -1349,15 +1421,75 @@ function renderSavedOrdersScreen() {
         </section>
     `;
 
-    const btnEnviar = document.querySelector("#btnEnviarPedidos");
+    document.querySelectorAll(".btnEditarPedido").forEach((button) => {
+        button.addEventListener("click", () => {
+            editarPedidoLocal(Number(button.dataset.index));
+        });
+    });
 
-    if (btnEnviar) {
-        btnEnviar.addEventListener("click", () => {
-            enviarPedidosParaFirestore(pedidos);
+    document.querySelectorAll(".btnEnviarPedidoUnico").forEach((button) => {
+        button.addEventListener("click", () => {
+            const index = Number(button.dataset.index);
+            const pedidosAtualizados = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+            enviarPedidosParaFirestore([pedidosAtualizados[index]]);
+        });
+    });
+
+    const btnEnviarTodos = document.querySelector("#btnEnviarTodosPedidos");
+
+    if (btnEnviarTodos) {
+        btnEnviarTodos.addEventListener("click", () => {
+            const pedidosAtualizados = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+            enviarPedidosParaFirestore(pedidosAtualizados);
         });
     }
 
     document.querySelector("#btnVoltarHome").addEventListener("click", renderHome);
+}
+
+function salvarEdicaoPedidoLocal(index, mostrarAlerta = true) {
+    const pedidos = JSON.parse(localStorage.getItem("pedidosBurgao")) || [];
+    const pedido = pedidos[index];
+
+    if (!pedido) return;
+
+    if (pedido.tipo === "familia") {
+        document.querySelectorAll(`.edit-family-burger[data-order-index="${index}"]`).forEach((select) => {
+            const participante = pedido.participantes.find(
+                (p) => p.nome === select.dataset.participantName
+            );
+
+            if (participante) {
+                participante[select.dataset.field] = select.value;
+            }
+        });
+
+        document.querySelectorAll(`.edit-special-family[data-order-index="${index}"]`).forEach((textarea) => {
+            const participante = pedido.participantes.find(
+                (p) => p.nome === textarea.dataset.participantName
+            );
+
+            if (participante) {
+                participante.pedidoEspecial = textarea.value.trim() || "Nenhuma observação";
+            }
+        });
+    } else {
+        document.querySelectorAll(`.edit-individual-burger[data-order-index="${index}"]`).forEach((select) => {
+            pedido[select.dataset.field] = select.value;
+        });
+
+        const textarea = document.querySelector(`.edit-special-individual[data-order-index="${index}"]`);
+
+        if (textarea) {
+            pedido.pedidoEspecial = textarea.value.trim() || "Nenhuma observação";
+        }
+    }
+
+    localStorage.setItem("pedidosBurgao", JSON.stringify(pedidos));
+
+    if (mostrarAlerta) {
+        alert("Edição salva com sucesso.");
+    }
 }
 
 function renderMyPaymentsScreen() {

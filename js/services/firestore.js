@@ -28,3 +28,29 @@ async function enviarPedidosParaFirestore(pedidos) {
         alert("Erro ao enviar pedidos. Verifique o Console do navegador.");
     }
 }
+
+async function buscarPedidosFirestore() {
+
+    try {
+
+        const snapshot = await db
+            .collection("pedidos")
+            .orderBy("enviadoEm", "desc")
+            .get();
+
+        return snapshot.docs.map(doc => ({
+            idFirestore: doc.id,
+            ...doc.data()
+        }));
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Erro ao carregar pedidos do Firebase.");
+
+        return [];
+
+    }
+
+}
